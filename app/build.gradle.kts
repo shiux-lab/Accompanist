@@ -1,16 +1,20 @@
+import java.util.Properties
+import kotlin.apply
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
-    namespace = "io.mocha.accompanist"
-    compileSdk = 34
+    namespace = "com.mocharealm.accompanist"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "io.mocha.accompanist"
+        applicationId = "com.mocharealm.accompanist"
         minSdk = 31
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -20,7 +24,29 @@ android {
         }
     }
 
+    signingConfigs {
+        val localProps = Properties().apply {
+            val file = rootProject.file("signing.properties")
+            if (file.exists()) {
+                file.inputStream().use { load(it) }
+            }
+        }
+        create("release")  {
+            storeFile = rootProject.file(localProps["RELEASE_STORE_FILE"] as String)
+            storePassword = localProps["RELEASE_STORE_PASSWORD"] as String
+            keyAlias = localProps["RELEASE_KEY_ALIAS"] as String
+            keyPassword = localProps["RELEASE_KEY_PASSWORD"] as String
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = true
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -28,27 +54,29 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
     }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+//    splits {
+//        abi {
+//            isEnable = true
+//            isUniversalApk = true
+//            //include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+//            reset()
+//        }
+//    }
 }
 
 dependencies {
@@ -63,7 +91,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
-    implementation(libs.androidx.activity)
+    implementation(libs.accompanist.lyrics)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
